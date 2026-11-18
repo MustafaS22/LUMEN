@@ -55,7 +55,7 @@ LUMEN uses [OpenAI’s Sign in with ChatGPT flow for local apps](https://develop
 - **Next.js App Router** serves the React workspace and the loopback-only API routes.
 - **OpenAI Responses API** uses the plan authorized by the signed-in user. The official local DevKit manages authorization, token refresh, and encrypted connection storage. Browser code receives connection status and model names.
 - **Zod** validates model-generated layouts, music notes, and vector primitives before rendering them. Code runs in an isolated iframe with restrictions on external resources. Downloaded HTML runs under the policy of whatever environment opens it, so review it before sharing or hosting it.
-- **Three.js** renders the glass object where WebGL is available. The app shows a still of the same scene when WebGL or motion is disabled.
+- **Three.js** renders the glass object where WebGL is available. The workspace uses translucent surfaces that frost the scene behind them. The app shows a still of the same scene when WebGL or motion is disabled.
 
 LUMEN is designed to run on your own machine. Keep it bound to loopback and avoid exposing or forwarding its local port. Prompts and the context required to answer them go to OpenAI when you use connected features. The dashboard shows the data you supply or explicitly labeled sample data. ChatGPT plan usage currently supports the text features used here, and the vector studio builds SVGs from validated text output. See [OpenAI’s preview limitations](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations).
 

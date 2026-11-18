@@ -119,7 +119,7 @@ export function AnswerShell({
 
   return (
     <motion.section
-      className="flex h-full min-h-0 flex-col rounded-2xl border border-glass-border overflow-hidden bg-[#1f2125] font-sans text-[#e8eaed]"
+      className="flex h-full min-h-0 flex-col lumen-workbench rounded-xl overflow-hidden font-sans text-[#e8eaed]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.5, delay: 0.35 } }}
       exit={{ opacity: 0, transition: { duration: 0.25 } }}

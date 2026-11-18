@@ -54,14 +54,14 @@ export function GalleryShell({
 
   return (
     <motion.section
-      className="flex h-full min-h-0 flex-col rounded-2xl border border-glass-border overflow-hidden bg-[#181818] font-sans text-[#dddddd]"
+      className="flex h-full min-h-0 flex-col lumen-workbench rounded-xl overflow-hidden font-sans text-[#dddddd]"
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1, transition: { duration: 0.5, delay: 0.35 } }}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
       aria-label={`Design studio: ${schema.title}`}
     >
       {/* Top bar */}
-      <header className="flex h-11 shrink-0 items-center gap-3 border-b border-black/60 bg-[#222222] px-3 text-xs">
+      <header className="flex h-11 shrink-0 items-center gap-3 border-b border-black/60 bg-white/8 px-3 text-xs">
         <Palette className="size-4 text-[#c792ea]" aria-hidden="true" />
         <span className="font-medium">Lumen Studio</span>
         <span className="text-[#8a8a8a]">— {schema.title}</span>
@@ -117,7 +117,7 @@ export function GalleryShell({
         </div>
 
         {/* Inspector */}
-        <aside className="flex h-1/2 min-h-0 shrink-0 flex-col border-t border-black/60 bg-[#222222] sm:h-full sm:w-72 sm:border-l sm:border-t-0">
+        <aside className="flex h-1/2 min-h-0 shrink-0 flex-col border-t border-black/60 bg-[#111a2d78] sm:h-full sm:w-72 sm:border-l sm:border-t-0">
           <div className="flex h-9 shrink-0 items-center border-b border-black/60 text-xs">
             <button
               type="button"

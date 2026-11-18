@@ -137,13 +137,21 @@
   --muted-ink: #a6abb9;
   --mint: #c0dded;
   --line: #2b2e39;
-  --rail: #101218;
-  --raised: #181b24;
+  --frost-rim: #b8d8ef3d;
+  --frost-rim-light: #edf8ff22;
+  --frost-deep: #0d1421;
+  --frost-pane: linear-gradient(146deg, #44586e36, #19243320 48%, #7598b323);
+  --frost-surface: linear-gradient(146deg, #293b50c9, #121b2cbb 53%, #243145ba);
+  --frost-control: linear-gradient(138deg, #47627ac7, #202d42e8 60%, #23334bcf);
+  --frost-edge: inset 0 1px 0 var(--frost-rim-light), inset 0 -1px 0 #080d1670;
   display: grid;
   grid-template-columns: 238px minmax(0, 1fr);
   min-height: 100svh;
   color: var(--ink);
-  background: #0a0c12;
+  background:
+    radial-gradient(ellipse 300px 410px at 0 14rem, #263b5380, transparent 100%),
+    radial-gradient(ellipse 420px 540px at 0 43rem, #2d254052, transparent 100%),
+    #090c13;
   font-size: 14px;
 }
 .lumen-app ::selection { background: #b4dcef; color: #0a1520; }
@@ -153,14 +161,14 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--rail);
   padding: 16px 13px;
 }
 .lumen-sidebar {
   position: sticky;
   top: 0;
   height: 100svh;
-  border-right: 1px solid #242731;
+  border-right: 1px solid var(--frost-rim);
+  background: #101621;
 }
 .lumen-wordmark {
   display: flex;
@@ -187,12 +195,13 @@
   margin-top: 24px;
   min-height: 38px;
   padding: 0 9px;
-  border: 1px solid #323744;
-  background: #1c202b;
+  border: 1px solid var(--frost-rim);
+  box-shadow: var(--frost-edge);
+  background: var(--frost-control);
   font-size: 13px;
   font-weight: 600;
 }
-.lumen-new:hover { background: #272d3b; }
+.lumen-new:hover { background: linear-gradient(138deg, #59758fc7, #2e3d57e8); }
 .lumen-new svg { color: var(--mint); }
 .lumen-library { flex: 1; min-height: 0; overflow: auto; margin-top: 25px; }
 .lumen-library-group + .lumen-library-group { margin-top: 27px; }
@@ -201,7 +210,8 @@
 .lumen-library-item { padding-inline: 8px; color: #c6cbd7; font-size: 12.5px; }
 .lumen-library-item svg { flex: none; color: #a1aabc; }
 .lumen-library-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lumen-library-item:hover, .lumen-library-item[aria-current] { background: #202430; color: var(--ink); }
+.lumen-library-item:hover, .lumen-library-item[aria-current] { background: #a5c9ed1c; color: var(--ink); }
+.lumen-library-item[aria-current] { box-shadow: inset 0 0 0 1px #b8dcf42e, inset 0 1px 0 #eff9ff18; }
 .lumen-library-item[aria-current] svg { color: var(--mint); }
 .lumen-rail-footer { display: flex; align-items: center; gap: 4px; padding-top: 12px; border-top: 1px solid #2a2d37; margin-top: 12px; }
 .lumen-account-button { min-width: 0; padding: 4px 6px; }
@@ -229,8 +239,9 @@
   gap: 12px;
   height: 56px;
   padding-inline: 24px;
-  border-bottom: 1px solid #22252e;
-  background: #0d0f16;
+  border-bottom: 1px solid var(--frost-rim);
+  background: #111927;
+  box-shadow: inset 0 -1px 0 #080d1670;
 }
 .lumen-location { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--muted-ink); font-size: 12.5px; }
 .lumen-location-divider { color: #767f91; }
@@ -242,8 +253,10 @@
   flex: none;
   margin-left: auto;
   padding: 5px 9px;
-  border: 1px solid #2e3340;
+  border: 1px solid var(--frost-rim);
   border-radius: 7px;
+  background: var(--frost-pane);
+  box-shadow: var(--frost-edge);
   color: #c6cbd7;
   font-size: 12px;
 }
@@ -255,14 +268,23 @@
 /* The original glass object leads the creation screen. */
 .lumen-scene {
   position: absolute;
-  inset: 56px 0 auto;
-  height: min(70svh, 580px);
+  inset: 0 0 auto;
+  height: min(75svh, 636px);
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse 56% 76% at 49% 34%, #142932 0%, #0f1923 47%, transparent 77%);
-  mask-image: linear-gradient(#000 78%, transparent);
+  background:
+    radial-gradient(ellipse 41% 39% at 48% 58%, #2b4f6280, #16273a51 66%, transparent),
+    radial-gradient(ellipse 28% 37% at 68% 69%, #5b3f325e, transparent 78%);
+  mask-image: linear-gradient(#000 88%, transparent);
 }
-.lumen-scene.is-split { height: 100%; max-height: 100svh; opacity: .73; }
+.lumen-scene.is-split {
+  height: 100%;
+  max-height: 100svh;
+  background:
+    radial-gradient(ellipse 64% 60% at 27% 29%, #2c5673b0, transparent 84%),
+    radial-gradient(ellipse 45% 60% at 88% 58%, #6e4d4380, transparent 83%),
+    radial-gradient(ellipse 40% 50% at 53% 65%, #29295a80, transparent);
+}
 .lumen-still {
   position: absolute;
   inset: 0;
@@ -276,9 +298,10 @@
 .lumen-launch-description { margin: 9px 0 23px; color: var(--muted-ink); font-size: 14px; }
 .lumen-composer {
   padding: 13px 13px 10px;
-  border: 1px solid #3d4759;
-  border-radius: 14px;
-  background: #161b26;
+  border: 1px solid var(--frost-rim);
+  border-radius: 18px;
+  background: #1b2639;
+  box-shadow: var(--frost-edge), 0 9px 28px #02060d4d;
   text-align: left;
 }
 .lumen-composer:focus-within, .lumen-refine:focus-within { border-color: #a5c7dc; }
@@ -300,10 +323,14 @@
   font-size: 12.5px;
   font-weight: 620;
 }
-.lumen-primary { background: var(--mint); color: #101c29; }
+.lumen-primary {
+  background: linear-gradient(#e6f4ff, #a7c9e0);
+  box-shadow: inset 0 1px 0 #fff9, inset 0 -1px 0 #4d758c55;
+  color: #101c29;
+}
 .lumen-primary:hover:not(:disabled) { background: #ddf0f8; }
-.lumen-primary:disabled { background: #262e3e; color: #a8b5c9; }
-.lumen-secondary { border: 1px solid #363d4d; color: #d3d8e5; }
+.lumen-primary:disabled { background: #abc1dd22; color: #b9c9dd; box-shadow: var(--frost-edge); }
+.lumen-secondary { border: 1px solid var(--frost-rim); background: var(--frost-pane); box-shadow: var(--frost-edge); color: #d3d8e5; }
 .lumen-secondary:hover:not(:disabled) { background: #293142; }
 .lumen-secondary:disabled { opacity: .55; }
 
@@ -315,28 +342,32 @@
 .lumen-workspace-source { flex: none; padding: 4px 7px; margin-top: 2px; border: 1px solid #353d4b; border-radius: 6px; color: #c1c9d8; font-size: 11px; }
 .lumen-shell { height: max(485px, calc(100dvh - 231px)); }
 .lumen-shell-dashboard { height: auto; }
-.lumen-workbench { border: 1px solid var(--line); background: #11151e; }
-.lumen-refine { display: flex; align-items: center; gap: 9px; padding: 6px; border: 1px solid var(--line); border-radius: 9px; background: #161b25; margin-top: 10px; }
+.lumen-workbench {
+  border: 1px solid var(--frost-rim);
+  background: var(--frost-deep);
+  box-shadow: var(--frost-edge), 0 9px 26px #02050c38;
+}
+.lumen-refine { display: flex; align-items: center; gap: 9px; padding: 6px; border: 1px solid var(--frost-rim); border-radius: 12px; background: #1b2639; box-shadow: var(--frost-edge); margin-top: 10px; }
 .lumen-refine input { flex: 1; min-width: 0; padding: 0 8px; font-size: 13px; }
-.lumen-dialog { width: min(calc(100% - 32px), 420px); max-height: 85svh; overflow: auto; margin: auto; padding: 13px 17px 17px; background: #181c26; border: 1px solid #374052; border-radius: 12px; color: var(--ink); }
+.lumen-dialog { width: min(calc(100% - 32px), 420px); max-height: 85svh; overflow: auto; margin: auto; padding: 13px 17px 17px; background: #1b2639; border: 1px solid var(--frost-rim); border-radius: 16px; box-shadow: var(--frost-edge), 0 16px 48px #03071170; color: var(--ink); }
 .lumen-dialog::backdrop, .lumen-drawer::backdrop { background: #060810bb; }
 .lumen-dialog-heading, .lumen-drawer-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .lumen-dialog-heading { margin-bottom: 9px; font-size: 16px; font-weight: 600; }
 .lumen-account-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
 .lumen-account-actions a { font-size: 13px; color: var(--mint); text-decoration: underline; text-underline-offset: 3px; }
 .lumen-account-status { font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; color: #c2c9d5; }
-.lumen-drawer[open] { position: fixed; inset: 0 auto 0 0; width: min(285px, 87vw); max-width: none; height: 100dvh; max-height: none; margin: 0; color: var(--ink); border-right: 1px solid var(--line); }
+.lumen-drawer[open] { position: fixed; inset: 0 auto 0 0; width: min(285px, 87vw); max-width: none; height: 100dvh; max-height: none; margin: 0; color: var(--ink); border-right: 1px solid var(--frost-rim); background: #172032; box-shadow: var(--frost-edge); }
 
 .lumen-ide-header, .lumen-ide-revision {
   display: flex; align-items: center; gap: 9px; min-height: 47px; padding: 7px 12px;
-  border-bottom: 1px solid var(--line); background: #191e2b; font-size: 13px;
+  border-bottom: 1px solid var(--line); background: var(--frost-pane); font-size: 13px;
 }
 .lumen-ide-header > svg { color: var(--mint); flex-shrink: 0; }
 .lumen-ide-header .lumen-secondary, .lumen-ide-revision .lumen-secondary { min-height: 31px; }
 .lumen-ide-panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex: 1; min-height: 0; }
-.lumen-editor-panel, .lumen-preview-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #11151e; }
+.lumen-editor-panel, .lumen-preview-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #0c15228f; }
 .lumen-preview-panel { border-left: 1px solid var(--line); }
-.lumen-editor-label { display: flex; justify-content: space-between; padding: 7px 12px; color: var(--muted-ink); background: #161b25; border-bottom: 1px solid var(--line); font-size: 12px; }
+.lumen-editor-label { display: flex; justify-content: space-between; padding: 7px 12px; color: var(--muted-ink); background: #a4c7eb0e; border-bottom: 1px solid var(--line); font-size: 12px; }
 .lumen-editor-panel textarea, .lumen-preview-panel iframe { flex: 1; min-height: 0; width: 100%; }
 .lumen-editor-panel textarea { resize: none; padding: 13px; color: #c3d0e4; font: 13px/1.55 ui-monospace, monospace; white-space: pre; }
 .lumen-ide-empty { display: grid; place-content: center; justify-items: center; flex: 1; gap: 13px; text-align: center; padding: 14px; font-size: 14px; color: var(--muted-ink); }
@@ -356,7 +387,7 @@
   .lumen-launch h1 { font-size: 1.68rem; }
 }
 @media (max-width: 620px) {
-  .lumen-scene { height: 365px; }
+  .lumen-scene { height: 401px; }
   .lumen-home { padding-top: 300px; }
   .lumen-still { background-size: auto 365px; }
   .lumen-ide-tabs { display: flex; gap: 13px; padding-inline: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
@@ -372,9 +403,15 @@
 
 .lumen-still[data-live=true] { opacity: 0; }
 .lumen-dashboard { flex: 1; min-height: 0; overflow: auto; padding: 14px; }
-.lumen-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(145px, 100%), 1fr)); margin-bottom: 13px; border: 1px solid #2b303c; border-radius: 9px; background: #171d29; }
+.lumen-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(145px, 100%), 1fr)); margin-bottom: 13px; border: 1px solid var(--frost-rim); border-radius: 10px; background: var(--frost-pane); box-shadow: var(--frost-edge); }
 .lumen-metrics:last-child { margin-bottom: 0; }
-.lumen-dashboard .glass { box-shadow: none; backdrop-filter: none; border-color: #2b303c; background: #171d29; }
+.lumen-dashboard .glass {
+  box-shadow: var(--frost-edge);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--frost-rim);
+  background: var(--frost-pane);
+}
 .lumen-dashboard .lumen-metric { background: none; box-shadow: none; border: 0; border-radius: 0; }
 @media (min-width: 1024px) {
   .lumen-metrics .lumen-metric + .lumen-metric { border-left: 1px solid #2b303c; }
@@ -382,4 +419,24 @@
 @media (max-width: 510px) {
   .lumen-metrics { grid-template-columns: 1fr; }
   .lumen-metrics .lumen-metric + .lumen-metric { border-top: 1px solid #2b303c; }
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lumen-sidebar, .lumen-header {
+    background: linear-gradient(145deg, #182333cf, #0d1420da 75%);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    backdrop-filter: blur(18px) saturate(135%);
+  }
+
+  .lumen-composer, .lumen-refine, .lumen-dialog, .lumen-drawer[open] {
+    background: var(--frost-surface);
+    -webkit-backdrop-filter: blur(26px) saturate(150%);
+    backdrop-filter: blur(26px) saturate(150%);
+  }
+
+  .lumen-workbench {
+    background: linear-gradient(148deg, #141f32a1, #0d1727a8 56%, #1a2030a8);
+    -webkit-backdrop-filter: blur(21px) saturate(150%);
+    backdrop-filter: blur(21px) saturate(150%);
+  }
 }

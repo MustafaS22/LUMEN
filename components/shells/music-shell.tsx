@@ -77,14 +77,14 @@ export function MusicShell({
 
   return (
     <motion.section
-      className="flex h-full min-h-0 flex-col rounded-2xl border border-glass-border overflow-hidden bg-[#28292e] font-sans text-[#d8d9dd]"
+      className="flex h-full min-h-0 flex-col lumen-workbench rounded-xl overflow-hidden font-sans text-[#d8d9dd]"
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1, transition: { duration: 0.5, delay: 0.35 } }}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
       aria-label={`Music studio: ${schema.title}`}
     >
       {/* Transport bar */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-black/40 bg-gradient-to-b from-[#3a3b41] to-[#2f3035] px-2 sm:px-4">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-black/40 bg-white/8 px-2 sm:px-4">
         <Music2 className="hidden size-4 text-[#30b0c7] sm:block" aria-hidden="true" />
         <span className="hidden text-sm font-medium sm:block">Lumen Studio</span>
 
@@ -228,7 +228,7 @@ export function MusicShell({
 
         {/* Producer chat drawer */}
         {drawerOpen && (
-          <aside className="flex w-72 shrink-0 flex-col border-l border-black/40 bg-[#2d2e33]">
+          <aside className="flex w-72 shrink-0 flex-col border-l border-black/40 bg-[#111a2d78]">
             <div className="flex h-9 shrink-0 items-center gap-2 border-b border-black/40 px-3 text-xs font-medium">
               <Bot className="size-3.5 text-[#30b0c7]" aria-hidden="true" />
               AI Producer
