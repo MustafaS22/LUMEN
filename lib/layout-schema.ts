@@ -2,9 +2,9 @@
  * Shared zod schema for the generated UI layout.
  *
  * This is the single contract between:
- *  - the Gemini backend (app/api/generate/route.ts) which uses it to
+ *  - the ChatGPT backend (app/api/generate/route.ts) which uses it to
  *    constrain + validate the model's structured output, and
- *  - the renderer (components/generative-canvas.tsx) which walks the
+ *  - the renderer (components/shells/shell-router.tsx) which walks the
  *    parsed result and maps block types to glass components.
  */
 
@@ -133,7 +133,7 @@ export const previewBlockSchema = z.object({
 })
 
 /**
- * WORKING mini IDE — Gemini writes a real, runnable single-file web app
+ * WORKING mini IDE — ChatGPT writes a real, runnable single-file web app
  * from `spec`; the block renders an editor + live sandboxed preview.
  */
 export const codeBlockSchema = z.object({
@@ -153,7 +153,7 @@ export const imageBlockSchema = z.object({
     .describe('Detailed image-generation prompt: subject, style, mood, colors'),
 })
 
-/** REAL music composition — Gemini composes notes, played via WebAudio. */
+/** REAL music composition — ChatGPT composes notes, played via WebAudio. */
 export const musicBlockSchema = z.object({
   type: z.literal('music'),
   title: z.string().describe('Track name, e.g. "Midnight Drive"'),
@@ -230,20 +230,13 @@ export type Block = z.infer<typeof blockSchema>
 export type LayoutSchema = z.infer<typeof layoutSchema>
 
 /* ------------------------------------------------------------------ */
-/* Gemini-facing schema                                                 */
+/* ChatGPT-facing schema                                                 */
 /* ------------------------------------------------------------------ */
-/**
- * Gemini's structured-output mode flattens zod discriminated unions poorly
- * (the model invents its own field names). So we hand Gemini a FLAT block
- * shape — one object with a `type` enum and optional fields — and then
- * normalize it into the strict internal types above. Numbers are coerced
- * because Gemini frequently returns numeric strings.
- */
-
+// Normalize the model-facing layout before using the stricter renderer schema.
 const flatItemSchema = z.object({
   title: z.string().describe('Item title'),
   meta: z.string().describe('Short secondary text: time, amount, status'),
-  done: z.boolean().nullable().describe('Only for task items; else null'),
+  done: z.boolean().nullish().describe('Only for task items; else null'),
 })
 
 const flatTileSchema = z.object({
@@ -279,7 +272,7 @@ const flatElementSchema = z.object({
   label: z.string(),
 })
 
-export const geminiBlockSchema = z.object({
+export const modelBlockSchema = z.object({
   type: z
     .enum([
       'stat',
@@ -298,77 +291,77 @@ export const geminiBlockSchema = z.object({
       'music',
     ])
     .describe('Which UI block to render'),
-  label: z.string().nullable().describe('stat only: short KPI label'),
-  value: z.string().nullable().describe('stat only: headline value like "$83.2k"'),
-  delta: z.string().nullable().describe('stat only: change like "+12.4%"'),
-  positive: z.boolean().nullable().describe('stat only: is the delta good news'),
+  label: z.string().nullish().describe('stat only: short KPI label'),
+  value: z.string().nullish().describe('stat only: headline value like "$83.2k"'),
+  delta: z.string().nullish().describe('stat only: change like "+12.4%"'),
+  positive: z.boolean().nullish().describe('stat only: is the delta good news'),
   title: z
     .string()
-    .nullable()
+    .nullish()
     .describe('block title (all types except stat and action)'),
-  kind: z.enum(['bar', 'line']).nullable().describe('chart only'),
-  data: z.array(z.coerce.number()).nullable().describe('chart only: 4-10 numbers'),
+  kind: z.enum(['bar', 'line']).nullish().describe('chart only'),
+  data: z.array(z.coerce.number()).nullish().describe('chart only: 4-10 numbers'),
   labels: z
     .array(z.string())
-    .nullable()
+    .nullish()
     .describe('chart only: one short label per data point'),
-  items: z.array(flatItemSchema).nullable().describe('list only: 2-6 items'),
-  body: z.string().nullable().describe('text only: 1-3 sentences'),
-  tiles: z.array(flatTileSchema).nullable().describe('grid only: 2-6 tiles'),
+  items: z.array(flatItemSchema).nullish().describe('list only: 2-6 items'),
+  body: z.string().nullish().describe('text only: 1-3 sentences'),
+  tiles: z.array(flatTileSchema).nullish().describe('grid only: 2-6 tiles'),
   actions: z
     .array(z.string())
-    .nullable()
+    .nullish()
     .describe('action only: 2-4 short button labels'),
   columns: z
     .array(z.string())
-    .nullable()
+    .nullish()
     .describe('table only: 2-6 column headers'),
   rows: z
     .array(flatRowSchema)
-    .nullable()
+    .nullish()
     .describe('table only: 2-10 rows, each with one cell per column'),
   rounds: z
     .array(flatRoundSchema)
-    .nullable()
+    .nullish()
     .describe('bracket only: rounds from earliest to final'),
   events: z
     .array(flatEventSchema)
-    .nullable()
+    .nullish()
     .describe('timeline only: 2-6 chronological events'),
   persona: z
     .string()
-    .nullable()
+    .nullish()
     .describe('chat only: system prompt defining the specialist assistant'),
-  placeholder: z.string().nullable().describe('chat only: input placeholder'),
-  intro: z.string().nullable().describe('chat only: assistant opening message'),
-  device: z.enum(['phone', 'browser']).nullable().describe('preview only'),
+  placeholder: z.string().nullish().describe('chat only: input placeholder'),
+  intro: z.string().nullish().describe('chat only: assistant opening message'),
+  device: z.enum(['phone', 'browser']).nullish().describe('preview only'),
   elements: z
     .array(flatElementSchema)
-    .nullable()
+    .nullish()
     .describe('preview only: 3-8 wireframe elements top to bottom'),
   spec: z
     .string()
-    .nullable()
+    .nullish()
     .describe(
       'code/image/music only: the DETAILED creative brief. code: full app spec with features and controls. image: full image prompt with style. music: genre, mood, tempo, instruments.',
     ),
 })
 
-export const geminiLayoutSchema = z.object({
+export const modelLayoutSchema = z.object({
   title: z.string().describe('Short title for the generated interface'),
   summary: z.string().describe('One sentence describing what was generated'),
   shell: shellSchema
-    .nullable()
+    .nullish()
     .describe(
       'Which app to become: ide (code workbench for building software/games), music (DAW for composing), answer (conversational answer engine for questions/advice/learning), gallery (visual studio for image creation), publisher (document workspace for writing/books/plans), dashboard (data panels for analytics/tracking/live events)',
     ),
-  blocks: z.array(geminiBlockSchema).min(1).max(9),
+  blocks: z.array(modelBlockSchema).min(1).max(9),
 })
 
-export type GeminiLayout = z.infer<typeof geminiLayoutSchema>
+export type ModelLayout = z.infer<typeof modelLayoutSchema>
 
-/** Converts Gemini's flat blocks into strict internal blocks, dropping any that are unusable. */
-export function normalizeLayout(raw: GeminiLayout): LayoutSchema | null {
+/** Converts ChatGPT's flat blocks into strict internal blocks, dropping any that are unusable. */
+export function normalizeLayout(raw: ModelLayout): LayoutSchema | null {
   const blocks: Block[] = []
 
   for (const b of raw.blocks) {
@@ -514,12 +507,14 @@ export function normalizeLayout(raw: GeminiLayout): LayoutSchema | null {
   return {
     title: raw.title,
     summary: raw.summary,
-    shell: raw.shell ?? deriveShell(blocks),
+    shell: blocks.some((block) => ['code', 'image', 'music'].includes(block.type))
+      ? deriveShell(blocks)
+      : raw.shell && !['ide', 'gallery', 'music'].includes(raw.shell) ? raw.shell : deriveShell(blocks),
     blocks,
   }
 }
 
-/** Content-based shell fallback for when Gemini omits the shell field. */
+/** Content-based shell fallback for when ChatGPT omits the shell field. */
 export function deriveShell(blocks: Block[]): Shell {
   if (blocks.some((b) => b.type === 'code')) return 'ide'
   if (blocks.some((b) => b.type === 'music')) return 'music'

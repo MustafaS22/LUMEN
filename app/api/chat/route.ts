@@ -1,19 +1,7 @@
-/**
- * POST /api/chat
- * --------------
- * Streaming backend for the live "chat" blocks that Gemini embeds in
- * generated layouts. Each chat block carries a `persona` — the specialist
- * system prompt Gemini wrote for that exact interface — so every embedded
- * assistant is a true domain expert, not a generic bot.
- *
- * Returns a plain text stream the client appends token-by-token.
- */
+import { rejectRemote } from '@/lib/local-request'
+import { chatgptError, complete } from '@/lib/chatgpt'
 
-import { generateText } from 'ai'
-import { google } from '@ai-sdk/google'
-import { withGeminiModel } from '@/lib/gemini'
-
-export const maxDuration = 60
+export const maxDuration = 100
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -21,6 +9,9 @@ interface ChatMessage {
 }
 
 export async function POST(req: Request) {
+  const rejected = rejectRemote(req)
+  if (rejected) return rejected
+
   let persona = ''
   let context = ''
   let messages: ChatMessage[] = []
@@ -54,24 +45,10 @@ export async function POST(req: Request) {
 
 You are embedded inside a generated glass interface${context ? ` titled "${context}"` : ''}. Keep replies concise (1-4 short paragraphs, plain text — no markdown headings or code fences unless asked). Be concrete and genuinely useful in your specialty.`
 
-  // generateText (not streamText) so quota errors surface BEFORE we commit
-  // to a response, letting the model chain retry on flash-lite. The client
-  // reads the body as a stream either way — it just arrives as one chunk.
   try {
-    const { text } = await withGeminiModel((modelId) =>
-      generateText({
-        model: google(modelId),
-        system,
-        messages,
-        maxRetries: 0,
-      }),
-    )
-
-    return new Response(text, {
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    })
+    const text = await complete(req, messages, system)
+    return new Response(text, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
   } catch (error) {
-    console.error('Chat generation failed:', error)
-    return Response.json({ error: 'Chat unavailable' }, { status: 500 })
+    return chatgptError(error, 'ChatGPT could not answer. Try again.')
   }
 }

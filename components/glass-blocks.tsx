@@ -1,5 +1,7 @@
 'use client'
 
+import { postLocal, responseError } from '@/lib/api-client'
+
 /**
  * Glass Component Registry
  * ------------------------
@@ -64,97 +66,52 @@ function StatCard({ block }: { block: StatBlock }) {
 }
 
 function ChartCard({ block }: { block: ChartBlock }) {
-  const max = Math.max(...block.data)
-  const W = 280
-  const H = 96
+  const width = 430
+  const height = 145
+  const min = Math.min(0, ...block.data)
+  const max = Math.max(0, ...block.data)
+  const y = (value: number) => height - 30 - ((value - min) / (max - min || 1)) * (height - 42)
+  const step = (width - 30) / block.data.length
+  const points = block.data.map((value, index) => ({ x: 15 + step * (index + .5), y: y(value), value }))
+  const line = points.map((point) => `${point.x},${point.y}`).join(' ')
+  const description = points.map(({ value }, index) => `${block.labels[index] || index + 1}: ${value}`).join(', ')
 
   return (
-    <div className="glass flex flex-col gap-4 rounded-3xl p-6">
-      <h3 className="text-sm font-medium text-muted-foreground">{block.title}</h3>
-      {block.kind === 'bar' ? (
-        <div className="flex h-28 items-end gap-2" role="img" aria-label={`Bar chart: ${block.title}`}>
-          {block.data.map((v, i) => (
-            <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-              {/* Bars animate height with a spring for a tactile build-in */}
-              <motion.div
-                className="w-full rounded-t-md bg-glow-cyan/60 shadow-[0_0_16px_-2px_var(--glow-cyan)]"
-                initial={{ height: 0 }}
-                animate={{ height: `${(v / max) * 100}%` }}
-                transition={{ type: 'spring', stiffness: 120, damping: 18, delay: i * 0.05 }}
-              />
-              <span className="truncate text-[10px] text-muted-foreground">{block.labels[i]}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="h-28 w-full"
-          role="img"
-          aria-label={`Line chart: ${block.title}`}
-        >
-          {(() => {
-            const pts = block.data.map((v, i) => ({
-              x: (i / (block.data.length - 1)) * (W - 8) + 4,
-              y: H - 8 - (v / max) * (H - 20),
-            }))
-            const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-            return (
-              <>
-                {/* Soft area fill under the line */}
-                <path
-                  d={`${path} L${pts[pts.length - 1].x},${H} L${pts[0].x},${H} Z`}
-                  fill="var(--glow-cyan)"
-                  opacity={0.12}
-                />
-                <motion.path
-                  d={path}
-                  fill="none"
-                  stroke="var(--glow-cyan)"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 1.2, ease: 'easeInOut' }}
-                />
-                {pts.map((p, i) => (
-                  <circle key={i} cx={p.x} cy={p.y} r={3} fill="var(--glow-cyan)" />
-                ))}
-              </>
-            )
-          })()}
-        </svg>
-      )}
+    <div className="glass flex h-full flex-col gap-3 rounded-2xl p-5">
+      <h3 className="text-sm font-medium">{block.title}</h3>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-full" role="img" aria-label={`${block.title}. ${description}`}>
+        {[12, 46, 80, 114].map((row) => <line key={row} x1="15" x2={width - 15} y1={row} y2={row} stroke="currentColor" opacity=".13" />)}
+        {block.kind === 'line' && <polyline points={line} fill="none" stroke="var(--glow-cyan)" strokeWidth="2.3" strokeLinejoin="round" strokeLinecap="round" />}
+        {points.map((point, index) => (
+          <g key={index}>
+            <title>{block.labels[index] || index + 1}: {point.value}</title>
+            <text x={point.x} y={height - 8} textAnchor="middle" fill="currentColor" className="fill-muted-foreground text-[10px]">
+              {(block.labels[index] || String(index + 1)).slice(0, 10)}
+            </text>
+            {block.kind === 'line' ? <circle cx={point.x} cy={point.y} r="3.5" fill="var(--glow-cyan)" />
+              : <rect x={point.x - step * .3} y={Math.min(point.y, y(0))} width={step * .6} height={Math.max(1, Math.abs(point.y - y(0)))} rx="2" fill="var(--glow-cyan)" />}
+          </g>
+        ))}
+      </svg>
     </div>
   )
 }
 
-function ListCard({ block }: { block: ListBlock }) {
+export function ListCard({ block, onChange }: { block: ListBlock; onChange?: (index: number, done: boolean) => void }) {
   return (
-    <div className="glass flex flex-col gap-3 rounded-3xl p-6">
-      <h3 className="text-sm font-medium text-muted-foreground">{block.title}</h3>
+    <div className="glass flex h-full flex-col gap-3 rounded-2xl p-5">
+      <h3 className="text-sm font-medium">{block.title}</h3>
       <ul className="flex flex-col">
-        {block.items.map((item, i) => (
-          <li
-            key={i}
-            className="flex items-center justify-between gap-3 border-b border-glass-border py-3 last:border-b-0"
-          >
-            <span className="flex items-center gap-2.5 text-sm">
-              {item.done !== undefined && (
-                <span
-                  className={`flex size-4 items-center justify-center rounded-full border ${
-                    item.done
-                      ? 'border-glow-cyan/50 bg-glow-cyan/20 text-glow-cyan'
-                      : 'border-glass-border'
-                  }`}
-                >
-                  {item.done && <Check className="size-2.5" aria-hidden="true" />}
-                </span>
-              )}
-              <span className={item.done ? 'text-muted-foreground line-through' : ''}>
-                {item.title}
-              </span>
-            </span>
+        {block.items.map((item, index) => (
+          <li key={index} className="flex items-center justify-between gap-3 border-b border-glass-border py-3 last:border-b-0">
+            {item.done !== undefined && onChange ? (
+              <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+                <input type="checkbox" checked={item.done} onChange={(event) => onChange(index, event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-glow-cyan" />
+                <span className={item.done ? 'text-muted-foreground line-through' : ''}>{item.title}</span>
+              </label>
+            ) : (
+              <span className="flex items-center gap-2 text-sm">{item.done && <Check className="size-4" aria-hidden="true" />}{item.title}</span>
+            )}
             <span className="shrink-0 text-xs text-muted-foreground">{item.meta}</span>
           </li>
         ))}
@@ -195,24 +152,11 @@ function GridCard({ block }: { block: GridBlock }) {
 
 function ActionCard({ block }: { block: ActionBlock }) {
   return (
-    <div className="glass flex flex-wrap items-center gap-3 rounded-3xl p-6">
-      <Sparkles className="size-4 text-glow-cyan" aria-hidden="true" />
-      {block.actions.map((label, i) => (
-        <motion.button
-          key={i}
-          type="button"
-          className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-            i === 0
-              ? 'bg-primary text-primary-foreground'
-              : 'glass-strong text-foreground hover:text-glow-cyan'
-          }`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.96 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-        >
-          {label}
-        </motion.button>
-      ))}
+    <div className="glass rounded-2xl p-5">
+      <h3 className="mb-3 text-sm font-medium">Suggested next steps</h3>
+      <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+        {block.actions.map((label, index) => <li key={index}>{label}</li>)}
+      </ul>
     </div>
   )
 }
@@ -337,7 +281,7 @@ interface ChatMessage {
   content: string
 }
 
-/** A LIVE chat assistant — streams real replies from /api/chat (Gemini). */
+/** A LIVE chat assistant — streams real replies from /api/chat (ChatGPT). */
 function ChatCard({ block }: { block: ChatBlock }) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'assistant', content: block.intro },
@@ -361,15 +305,11 @@ function ChatCard({ block }: { block: ChatBlock }) {
     setBusy(true)
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const res = await postLocal('/api/chat', {
           persona: block.persona,
           context: block.title,
           messages: history,
-        }),
-      })
+        })
       if (!res.ok || !res.body) throw new Error('Chat request failed')
 
       const reader = res.body.getReader()

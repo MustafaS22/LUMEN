@@ -1,14 +1,17 @@
 'use client'
 
+import { previewDocument } from '@/lib/preview'
+import { postLocal, responseError } from '@/lib/api-client'
+
 /**
  * Workspace blocks — the FUNCTIONAL cores of a generated interface.
  *
- *  - CodeStudio:  a working mini IDE. Gemini writes a real single-file app;
+ *  - CodeStudio:  a working mini IDE. ChatGPT writes a real single-file app;
  *                 rendered live in a sandboxed iframe. Code is editable,
  *                 re-runnable, AI-revisable and downloadable.
- *  - ImageStudio: real image generation (Gemini image model) with an
+ *  - ImageStudio: real image generation (ChatGPT vector illustration) with an
  *                 editable prompt, regenerate and download.
- *  - MusicStudio: real composition (Gemini writes the notes) synthesized
+ *  - MusicStudio: real composition (ChatGPT writes the notes) synthesized
  *                 live in the browser with WebAudio, with a piano-roll view.
  */
 
@@ -105,12 +108,8 @@ export function CodeStudio({ block }: { block: CodeBlock }) {
   const generate = useCallback(async () => {
     setStatus('loading')
     try {
-      const res = await fetch('/api/code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spec: block.spec }),
-      })
-      if (!res.ok) throw new Error(`API ${res.status}`)
+      const res = await postLocal('/api/code', { spec: block.spec })
+      if (!res.ok) throw await responseError(res, 'ChatGPT could not complete the request.')
       const text = await res.text()
       setCode(text)
       setDraft(text)
@@ -130,12 +129,8 @@ export function CodeStudio({ block }: { block: CodeBlock }) {
     if (!text || revising) return
     setRevising(true)
     try {
-      const res = await fetch('/api/code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spec: block.spec, code, instruction: text }),
-      })
-      if (!res.ok) throw new Error(`API ${res.status}`)
+      const res = await postLocal('/api/code', { spec: block.spec, code, instruction: text })
+      if (!res.ok) throw await responseError(res, 'ChatGPT could not complete the request.')
       const next = await res.text()
       setCode(next)
       setDraft(next)
@@ -221,8 +216,8 @@ export function CodeStudio({ block }: { block: CodeBlock }) {
             {tab === 'preview' ? (
               <iframe
                 key={runKey}
-                srcDoc={code}
-                sandbox="allow-scripts allow-pointer-lock"
+                srcDoc={previewDocument(code)}
+                sandbox="allow-scripts"
                 title={`${block.title} live preview`}
                 className="size-full border-0 bg-[#0b0d12]"
               />
@@ -286,14 +281,10 @@ export function ImageStudio({ block }: { block: ImageBlock }) {
   const generate = useCallback(async (p: string) => {
     setStatus('loading')
     try {
-      const res = await fetch('/api/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: p }),
-      })
-      const data = (await res.json()) as { image?: string; detail?: string }
+      const res = await postLocal('/api/image', { prompt: p })
+      const data = (await res.json()) as { image?: string; detail?: string; error?: string }
       if (!res.ok || !data.image) {
-        setErrorMsg(data.detail ?? 'Image generation failed.')
+        setErrorMsg(data.detail ?? data.error ?? 'Artwork generation failed.')
         throw new Error('No image')
       }
       setImage(data.image)
@@ -310,7 +301,7 @@ export function ImageStudio({ block }: { block: ImageBlock }) {
   function handleDownload() {
     const a = document.createElement('a')
     a.href = image
-    a.download = `${block.title.toLowerCase().replace(/\s+/g, '-')}.png`
+    a.download = `${block.title.toLowerCase().replace(/\s+/g, '-')}.svg`
     a.click()
   }
 
@@ -399,12 +390,8 @@ export function MusicStudio({ block }: { block: MusicBlock }) {
   const generate = useCallback(async () => {
     setStatus('loading')
     try {
-      const res = await fetch('/api/music', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spec: block.spec }),
-      })
-      if (!res.ok) throw new Error(`API ${res.status}`)
+      const res = await postLocal('/api/music', { spec: block.spec })
+      if (!res.ok) throw await responseError(res, 'ChatGPT could not complete the request.')
       const data = (await res.json()) as { composition?: Composition }
       if (!data.composition) throw new Error('No composition')
       setComp(data.composition)

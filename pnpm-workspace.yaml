@@ -1,0 +1,7 @@
+allowBuilds:
+  sharp: false
+overrides:
+  postcss: "^8.5.14"
+  browserslist: "^4.28.7"
+  baseline-browser-mapping: "^2.11.0"
+  three-stdlib>fflate: "^0.8.2"

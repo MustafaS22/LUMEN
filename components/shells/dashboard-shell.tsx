@@ -10,7 +10,7 @@
 import { motion } from 'framer-motion'
 import { Activity, LayoutGrid, RotateCcw } from 'lucide-react'
 import type { LayoutSchema } from '@/lib/generative-engine'
-import { GlassBlock, blockSpan } from '@/components/glass-blocks'
+import { GlassBlock, ListCard, blockSpan } from '@/components/glass-blocks'
 import { ShellChrome, SourceBadge } from '@/components/shells/shared'
 
 const container = {
@@ -33,17 +33,19 @@ export function DashboardShell({
   schema,
   source,
   onReset,
+  onLayoutChange,
 }: {
   schema: LayoutSchema
-  source: 'gemini' | 'fallback'
+  source: 'chatgpt' | 'fallback' | 'example'
   onReset: () => void
+  onLayoutChange: (layout: LayoutSchema) => void
 }) {
   return (
     <ShellChrome>
       {/* Command toolbar */}
       <div className="glass-strong flex items-center gap-3 rounded-t-2xl border-b border-glass-border px-4 py-2.5">
         <LayoutGrid className="size-4 text-glow-cyan" aria-hidden="true" />
-        <h1 className="truncate text-sm font-semibold">{schema.title}</h1>
+        <h2 className="truncate text-sm font-semibold">Dashboard</h2>
         <span className="hidden truncate text-xs text-muted-foreground md:inline">
           {schema.summary}
         </span>
@@ -69,8 +71,11 @@ export function DashboardShell({
       >
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           {schema.blocks.map((block, i) => (
-            <motion.div key={i} variants={panel} className={blockSpan(block)}>
-              <GlassBlock block={block} />
+            <motion.div key={i} variants={panel} className={block.type === 'list' ? 'md:col-span-2 lg:col-span-1' : blockSpan(block)}>
+              {block.type === 'list' ? <ListCard block={block} onChange={(itemIndex, done) => {
+                const items = block.items.map((item, index) => index === itemIndex ? { ...item, done } : item)
+                onLayoutChange({ ...schema, blocks: schema.blocks.map((item, index) => index === i ? { ...block, items } : item) })
+              }} /> : <GlassBlock block={block} />}
             </motion.div>
           ))}
         </div>
@@ -79,7 +84,7 @@ export function DashboardShell({
       {/* Status footer */}
       <div className="flex items-center gap-3 rounded-b-2xl border-t border-glass-border px-4 py-1.5 font-mono text-[10px] text-muted-foreground">
         <Activity className="size-3 text-glow-cyan" aria-hidden="true" />
-        <span>{schema.blocks.length} live panels</span>
+        <span>{schema.blocks.length} panels</span>
         <span className="ml-auto">Lumen Terminal</span>
       </div>
     </ShellChrome>

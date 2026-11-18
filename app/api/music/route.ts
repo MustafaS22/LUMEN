@@ -1,19 +1,8 @@
-/**
- * POST /api/music — REAL music composition.
- *
- * Gemini composes a structured multi-track piece (tempo, tracks, notes as
- * MIDI pitch + beat timings). The client synthesizes it live with WebAudio.
- *
- * Body: { spec: string }
- * Returns: { composition: Composition }
- */
-
-import { generateText, Output } from 'ai'
-import { google } from '@ai-sdk/google'
+import { rejectRemote } from '@/lib/local-request'
 import { z } from 'zod'
-import { withGeminiModel } from '@/lib/gemini'
+import { chatgptError, complete, parseModelJSON } from '@/lib/chatgpt'
 
-export const maxDuration = 60
+export const maxDuration = 100
 
 const noteSchema = z.object({
   p: z.coerce.number().describe('MIDI pitch 21-108 (60 = middle C)'),
@@ -50,6 +39,9 @@ Composition craft:
 - Keep total notes under 220.`
 
 export async function POST(req: Request) {
+  const rejected = rejectRemote(req)
+  if (rejected) return rejected
+
   let body: { spec?: string }
   try {
     body = await req.json()
@@ -57,38 +49,32 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const spec = typeof body.spec === 'string' ? body.spec.trim().slice(0, 1000) : ''
+  const spec = typeof body?.spec === 'string' ? body.spec.trim().slice(0, 1000) : ''
   if (!spec) {
     return Response.json({ error: 'Missing spec' }, { status: 400 })
   }
 
   try {
-    const { output } = await withGeminiModel((modelId) =>
-      generateText({
-        model: google(modelId),
-        output: Output.object({ schema: compositionSchema }),
-        system: SYSTEM,
-        prompt: `Compose: ${spec}`,
-        maxRetries: 0,
-      }),
-    )
+    const instructions = SYSTEM + '\nReturn only JSON with title, bpm, bars, and tracks. Each track has name, wave (sine/square/sawtooth/triangle), volume (0–1), and notes. Each note has p (MIDI pitch), t (start beat), and d (duration in beats).'
+    const output = compositionSchema.parse(parseModelJSON(await complete(req, `Compose: ${spec}`, instructions)))
+    const bars = Math.min(16, Math.max(2, Math.floor(output.bars)))
 
     // Sanity clamp — keep playback well-behaved regardless of model output.
     const composition: Composition = {
       title: output.title,
       bpm: Math.min(200, Math.max(50, output.bpm)),
-      bars: Math.min(16, Math.max(2, output.bars)),
+      bars,
       tracks: output.tracks.slice(0, 4).map((tr) => ({
         name: tr.name,
         wave: tr.wave,
         volume: Math.min(1, Math.max(0.05, tr.volume)),
         notes: tr.notes
-          .filter((n) => Number.isFinite(n.p) && Number.isFinite(n.t) && n.d > 0)
+          .filter((n) => Number.isFinite(n.p) && n.t >= 0 && n.t < bars * 4 && n.d > 0)
           .slice(0, 300)
           .map((n) => ({
             p: Math.min(108, Math.max(21, Math.round(n.p))),
             t: Math.max(0, n.t),
-            d: Math.min(8, Math.max(0.05, n.d)),
+            d: Math.min(8, bars * 4 - n.t, Math.max(0.05, n.d)),
           })),
       })),
     }
@@ -99,7 +85,6 @@ export async function POST(req: Request) {
 
     return Response.json({ composition })
   } catch (error) {
-    console.error('Music composition failed:', error)
-    return Response.json({ error: 'Composition unavailable' }, { status: 500 })
+    return chatgptError(error, 'ChatGPT could not compose a playable track. Try again.')
   }
 }

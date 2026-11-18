@@ -11,8 +11,6 @@ import { motion } from 'framer-motion'
 import {
   Bot,
   Download,
-  ImageIcon,
-  Layers,
   Loader2,
   Palette,
   RefreshCw,
@@ -50,13 +48,13 @@ export function GalleryShell({
   function handleDownload() {
     const a = document.createElement('a')
     a.href = image
-    a.download = `${schema.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`
+    a.download = `${schema.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.svg`
     a.click()
   }
 
   return (
     <motion.section
-      className="fixed inset-0 z-10 flex flex-col overflow-hidden bg-[#181818] font-sans text-[#dddddd]"
+      className="flex h-full min-h-0 flex-col rounded-2xl border border-glass-border overflow-hidden bg-[#181818] font-sans text-[#dddddd]"
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1, transition: { duration: 0.5, delay: 0.35 } }}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
@@ -76,26 +74,10 @@ export function GalleryShell({
         </button>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        {/* Tool rail */}
-        <nav
-          className="flex w-11 shrink-0 flex-col items-center gap-1 border-r border-black/60 bg-[#222222] py-2"
-          aria-label="Tools"
-        >
-          <button type="button" className="rounded p-2 text-white" aria-label="Generate tool">
-            <Sparkles className="size-4" aria-hidden="true" />
-          </button>
-          <button type="button" className="rounded p-2 text-[#8a8a8a] hover:text-white" aria-label="Layers">
-            <Layers className="size-4" aria-hidden="true" />
-          </button>
-          <button type="button" className="rounded p-2 text-[#8a8a8a] hover:text-white" aria-label="Assets">
-            <ImageIcon className="size-4" aria-hidden="true" />
-          </button>
-        </nav>
-
+      <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
         {/* Canvas */}
         <div
-          className="flex min-w-0 flex-1 items-center justify-center p-6"
+          className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden p-3 sm:p-6"
           style={{
             backgroundImage:
               'repeating-conic-gradient(#1d1d1d 0% 25%, #212121 0% 50%)',
@@ -119,14 +101,14 @@ export function GalleryShell({
               </button>
             </div>
           ) : (
-            <div className="relative max-h-full max-w-full overflow-hidden rounded shadow-2xl shadow-black/60 ring-1 ring-black/60">
+            <div className="relative flex h-full w-full max-w-xl items-center justify-center overflow-hidden rounded shadow-2xl shadow-black/60 ring-1 ring-black/60">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image || '/placeholder.svg'} alt={prompt} className="max-h-[70vh] w-auto" />
+              <img src={image || '/placeholder.svg'} alt={prompt} className="h-full w-full object-contain" />
               <button
                 type="button"
                 onClick={handleDownload}
                 className="absolute right-3 top-3 rounded-md bg-black/60 p-2 text-white backdrop-blur hover:bg-black/80"
-                aria-label="Download image"
+                aria-label="Download SVG artwork"
               >
                 <Download className="size-4" aria-hidden="true" />
               </button>
@@ -135,7 +117,7 @@ export function GalleryShell({
         </div>
 
         {/* Inspector */}
-        <aside className="flex w-72 shrink-0 flex-col border-l border-black/60 bg-[#222222]">
+        <aside className="flex h-1/2 min-h-0 shrink-0 flex-col border-t border-black/60 bg-[#222222] sm:h-full sm:w-72 sm:border-l sm:border-t-0">
           <div className="flex h-9 shrink-0 items-center border-b border-black/60 text-xs">
             <button
               type="button"
@@ -184,10 +166,10 @@ export function GalleryShell({
                     <button
                       key={style}
                       type="button"
+                      disabled={status === 'loading'}
                       onClick={() => {
                         const next = `${prompt.replace(/, in .*? style$/i, '')}, in ${style.toLowerCase()} style`
                         setPrompt(next)
-                        generate(next)
                       }}
                       className="rounded-full bg-black/30 px-2.5 py-1 text-[11px] text-[#aaaaaa] ring-1 ring-black/60 hover:text-white"
                     >

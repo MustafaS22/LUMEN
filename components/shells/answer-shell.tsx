@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { LayoutSchema, ChatBlock, Block } from '@/lib/generative-engine'
 import { useChatSession } from '@/components/shells/shared'
 
-/** Compact knowledge cards for any data blocks Gemini attached to the answer. */
+/** Compact knowledge cards for any data blocks ChatGPT attached to the answer. */
 function KnowledgeCard({ block }: { block: Block }) {
   switch (block.type) {
     case 'text':
@@ -114,12 +114,12 @@ export function AnswerShell({
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (chat.messages.length > 1) bottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
   }, [chat.messages.length, chat.busy])
 
   return (
     <motion.section
-      className="fixed inset-0 z-10 flex flex-col overflow-hidden bg-[#1f2125] font-sans text-[#e8eaed]"
+      className="flex h-full min-h-0 flex-col rounded-2xl border border-glass-border overflow-hidden bg-[#1f2125] font-sans text-[#e8eaed]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.5, delay: 0.35 } }}
       exit={{ opacity: 0, transition: { duration: 0.25 } }}
@@ -143,15 +143,6 @@ export function AnswerShell({
       {/* Answer column */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-2xl px-4 pb-32 pt-2">
-          {/* The query */}
-          <h1 className="text-2xl font-normal tracking-tight text-balance md:text-3xl">
-            {schema.title}
-          </h1>
-          <div className="mt-2 flex items-center gap-2 text-xs text-[#9aa0a6]">
-            <Sparkles className="size-3.5 text-[#8ab4f8]" aria-hidden="true" />
-            AI-generated · grounded with Google Search
-          </div>
-
           {/* Conversation */}
           <div className="mt-6 space-y-5">
             {chat.messages.map((m, i) =>

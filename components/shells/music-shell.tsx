@@ -5,7 +5,7 @@
  *
  * Transport bar with LCD display, track headers on the left, note-lane
  * timeline with a moving playhead, and an AI producer chat drawer.
- * The composition is REAL: Gemini writes the notes, WebAudio plays them.
+ * The composition is REAL: ChatGPT writes the notes, WebAudio plays them.
  */
 
 import { motion } from 'framer-motion'
@@ -56,10 +56,8 @@ function TrackLane({ track, color, bars }: { track: Track; color: string; bars: 
 
 export function MusicShell({
   schema,
-  onReset,
 }: {
   schema: LayoutSchema
-  onReset: () => void
 }) {
   const musicBlock = schema.blocks.find((b): b is MusicBlock => b.type === 'music')
   const chatBlock = schema.blocks.find((b): b is ChatBlock => b.type === 'chat')
@@ -79,30 +77,19 @@ export function MusicShell({
 
   return (
     <motion.section
-      className="fixed inset-0 z-10 flex flex-col overflow-hidden bg-[#28292e] font-sans text-[#d8d9dd]"
+      className="flex h-full min-h-0 flex-col rounded-2xl border border-glass-border overflow-hidden bg-[#28292e] font-sans text-[#d8d9dd]"
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1, transition: { duration: 0.5, delay: 0.35 } }}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
       aria-label={`Music studio: ${schema.title}`}
     >
       {/* Transport bar */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-black/40 bg-gradient-to-b from-[#3a3b41] to-[#2f3035] px-4">
-        <div className="flex items-center gap-1.5" aria-hidden="true">
-          <button
-            type="button"
-            onClick={onReset}
-            className="size-3 rounded-full bg-[#ff5f57] transition-transform hover:scale-110"
-            aria-label="Close studio"
-          />
-          <span className="size-3 rounded-full bg-[#febc2e]" />
-          <span className="size-3 rounded-full bg-[#28c840]" />
-        </div>
-
-        <Music2 className="ml-2 size-4 text-[#30b0c7]" aria-hidden="true" />
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-black/40 bg-gradient-to-b from-[#3a3b41] to-[#2f3035] px-2 sm:px-4">
+        <Music2 className="hidden size-4 text-[#30b0c7] sm:block" aria-hidden="true" />
         <span className="hidden text-sm font-medium sm:block">Lumen Studio</span>
 
         {/* Transport controls */}
-        <div className="mx-auto flex items-center gap-2">
+        <div className="mx-auto flex items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={playing ? stop : play}
@@ -114,7 +101,7 @@ export function MusicShell({
           </button>
 
           {/* LCD display */}
-          <div className="flex h-10 min-w-44 items-center justify-center gap-4 rounded-md bg-[#1c2b20] px-4 font-mono text-[#7de89a] shadow-inner ring-1 ring-black/60">
+          <div className="flex h-10 min-w-26 items-center justify-center gap-2 sm:min-w-44 sm:gap-4 rounded-md bg-[#1c2b20] px-4 font-mono text-[#7de89a] shadow-inner ring-1 ring-black/60">
             {status === 'loading' ? (
               <span className="animate-pulse text-xs">COMPOSING…</span>
             ) : (
@@ -122,7 +109,7 @@ export function MusicShell({
                 <span className="text-sm tabular-nums">
                   {String(Math.floor(beat / 4) + 1).padStart(2, '0')}.{String(Math.floor(beat % 4) + 1)}
                 </span>
-                <span className="text-[10px] opacity-70">BAR.BEAT</span>
+                <span className="hidden text-[10px] opacity-70 sm:inline">BAR.BEAT</span>
                 <span className="text-sm tabular-nums">{comp?.bpm ?? '--'}</span>
                 <span className="text-[10px] opacity-70">BPM</span>
               </>
@@ -137,6 +124,7 @@ export function MusicShell({
             }}
             className="flex size-10 items-center justify-center rounded-full bg-gradient-to-b from-[#4a4b52] to-[#37383e] text-[#d8d9dd] ring-1 ring-black/50 transition-transform hover:scale-105"
             aria-label="Recompose track"
+            disabled={status === 'loading'}
           >
             <RefreshCw className="size-4" aria-hidden="true" />
           </button>
@@ -179,7 +167,7 @@ export function MusicShell({
           {status === 'loading' ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[#7d7e85]">
               <Loader2 className="size-6 animate-spin text-[#30b0c7]" aria-hidden="true" />
-              <p className="text-sm">Gemini is composing “{schema.title}”…</p>
+              <p className="text-sm">ChatGPT is composing “{schema.title}”…</p>
             </div>
           ) : status === 'error' || !comp ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3">
@@ -233,7 +221,7 @@ export function MusicShell({
           )}
           {status === 'ready' && (
             <p className="px-4 py-3 text-[11px] text-[#7d7e85]">
-              “{comp?.title}” — composed by Gemini · {comp?.bars} bars · loops on play
+              “{comp?.title}” — composed by ChatGPT · {comp?.bars} bars · loops on play
             </p>
           )}
         </div>

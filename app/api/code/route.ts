@@ -1,19 +1,7 @@
-/**
- * POST /api/code — writes a REAL runnable app.
- *
- * Body: { spec: string, code?: string, instruction?: string }
- *  - spec only:            generate a complete single-file web app from scratch
- *  - code + instruction:   modify the existing code per the instruction
- *
- * Returns text/plain: a complete HTML document, renderable directly in a
- * sandboxed <iframe srcDoc>. Single-file keeps it instantly previewable.
- */
+import { rejectRemote } from '@/lib/local-request'
+import { chatgptError, complete } from '@/lib/chatgpt'
 
-import { generateText } from 'ai'
-import { google } from '@ai-sdk/google'
-import { withGeminiModel } from '@/lib/gemini'
-
-export const maxDuration = 60
+export const maxDuration = 100
 
 const SYSTEM = `You are an expert web developer. You write COMPLETE, WORKING, self-contained single-file web apps.
 
@@ -26,17 +14,20 @@ Hard rules:
 - Keep it under 400 lines. Prefer canvas for games.`
 
 export async function POST(req: Request) {
-  let body: { spec?: string; code?: string; instruction?: string }
+  const rejected = rejectRemote(req)
+  if (rejected) return rejected
+
+  let body: { spec?: string; code?: string; instruction?: string } | null
   try {
     body = await req.json()
   } catch {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const spec = typeof body.spec === 'string' ? body.spec.slice(0, 2000) : ''
-  const code = typeof body.code === 'string' ? body.code.slice(0, 60000) : ''
+  const spec = typeof body?.spec === 'string' ? body?.spec.slice(0, 2000) : ''
+  const code = typeof body?.code === 'string' ? body?.code.slice(0, 60000) : ''
   const instruction =
-    typeof body.instruction === 'string' ? body.instruction.slice(0, 1000) : ''
+    typeof body?.instruction === 'string' ? body?.instruction.slice(0, 1000) : ''
 
   if (!spec && !(code && instruction)) {
     return Response.json({ error: 'Missing spec' }, { status: 400 })
@@ -48,14 +39,7 @@ export async function POST(req: Request) {
       : `Build this app: ${spec}`
 
   try {
-    const { text } = await withGeminiModel((modelId) =>
-      generateText({
-        model: google(modelId),
-        system: SYSTEM,
-        prompt,
-        maxRetries: 0,
-      }),
-    )
+    const text = await complete(req, prompt, SYSTEM)
 
     // Strip accidental markdown fences and anything before <!DOCTYPE.
     let out = text.trim()
@@ -70,7 +54,6 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     })
   } catch (error) {
-    console.error('Code generation failed:', error)
-    return Response.json({ error: 'Code generation unavailable' }, { status: 500 })
+    return chatgptError(error, 'ChatGPT could not build the HTML document. Try again.')
   }
 }

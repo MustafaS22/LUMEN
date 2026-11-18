@@ -1,5 +1,7 @@
 'use client'
 
+import { postLocal, responseError } from '@/lib/api-client'
+
 /**
  * Shared functional cores for the app shells.
  *
@@ -29,23 +31,23 @@ export function ShellChrome({ children }: { children: ReactNode }) {
   )
 }
 
-/** Tiny badge showing whether Gemini or the local fallback built the app. */
-export function SourceBadge({ source }: { source: 'gemini' | 'fallback' }) {
+/** Tiny badge showing whether ChatGPT or the local fallback built the app. */
+export function SourceBadge({ source }: { source: 'chatgpt' | 'fallback' | 'example' }) {
   return (
     <span
       className={`rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
-        source === 'gemini'
+        source === 'chatgpt'
           ? 'border-glow-cyan/40 text-glow-cyan'
           : 'border-glass-border text-muted-foreground'
       }`}
     >
-      {source === 'gemini' ? 'Gemini' : 'Offline'}
+      {source === 'chatgpt' ? 'ChatGPT' : source === 'example' ? 'Example' : 'Local starter'}
     </span>
   )
 }
 
 /* ------------------------------------------------------------------ */
-/* Chat session — real Gemini conversation via /api/chat                */
+/* Chat session — real ChatGPT conversation via /api/chat                */
 /* ------------------------------------------------------------------ */
 
 export interface ChatMessage {
@@ -66,21 +68,17 @@ export function useChatSession(persona: string, intro?: string) {
       setBusy(true)
       setMessages((prev) => [...prev, { role: 'user', content }])
       try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const res = await postLocal('/api/chat', {
             persona,
             messages: [...messages, { role: 'user', content }],
-          }),
-        })
-        if (!res.ok) throw new Error(`API ${res.status}`)
+          })
+        if (!res.ok) throw await responseError(res, 'ChatGPT could not complete the request.')
         const reply = await res.text()
         setMessages((prev) => [...prev, { role: 'assistant', content: reply }])
-      } catch {
+      } catch (error) {
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: 'Connection hiccup — try that again.' },
+          { role: 'assistant', content: error instanceof Error ? error.message : 'ChatGPT did not reply. Try again.' },
         ])
       } finally {
         setBusy(false)
@@ -96,54 +94,49 @@ export function useChatSession(persona: string, intro?: string) {
 /* Code generation — real app writing via /api/code                     */
 /* ------------------------------------------------------------------ */
 
-export function useCodeGen(spec: string) {
-  const [code, setCode] = useState('')
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+export function useCodeGen(spec: string, live: boolean, initialCode?: string) {
+  const [code, setCode] = useState(initialCode ?? '')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(initialCode ? 'ready' : 'idle')
+  const [error, setError] = useState('')
   const [revising, setRevising] = useState(false)
+  const active = useRef<AbortController | null>(null)
 
-  const generate = useCallback(async () => {
-    setStatus('loading')
+  const generate = useCallback(async (instruction?: string) => {
+    if (!live || active.current) return false
+    const controller = new AbortController()
+    active.current = controller
+    setError('')
+    if (instruction) setRevising(true)
+    else setStatus('loading')
     try {
-      const res = await fetch('/api/code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spec }),
-      })
-      if (!res.ok) throw new Error(`API ${res.status}`)
-      setCode(await res.text())
+      const input = instruction ? { spec, code, instruction } : { spec }
+      const response = await postLocal('/api/code', input, controller.signal)
+      if (!response.ok) throw await responseError(response, 'Could not build HTML.')
+      const html = await response.text()
+      if (controller.signal.aborted) return false
+      setCode(html)
       setStatus('ready')
-    } catch {
-      setStatus('error')
-    }
-  }, [spec])
-
-  useEffect(() => {
-    generate()
-  }, [generate])
-
-  const revise = useCallback(
-    async (instruction: string): Promise<boolean> => {
-      if (revising) return false
-      setRevising(true)
-      try {
-        const res = await fetch('/api/code', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ spec, code, instruction }),
-        })
-        if (!res.ok) throw new Error(`API ${res.status}`)
-        setCode(await res.text())
-        return true
-      } catch {
-        return false
-      } finally {
+      return true
+    } catch (failure) {
+      if (!controller.signal.aborted) {
+        setError(failure instanceof Error ? failure.message : 'Could not build HTML.')
+        if (!instruction) setStatus('error')
+      }
+      return false
+    } finally {
+      if (active.current === controller) {
+        active.current = null
         setRevising(false)
       }
-    },
-    [code, revising, spec],
-  )
+    }
+  }, [code, live, spec])
 
-  return { code, setCode, status, revising, generate, revise }
+  useEffect(() => () => {
+    active.current?.abort()
+    active.current = null
+  }, [])
+
+  return { code, setCode, status, error, revising, generate }
 }
 
 /* ------------------------------------------------------------------ */
@@ -186,12 +179,8 @@ export function useMusicGen(spec: string) {
   const generate = useCallback(async () => {
     setStatus('loading')
     try {
-      const res = await fetch('/api/music', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spec }),
-      })
-      if (!res.ok) throw new Error(`API ${res.status}`)
+      const res = await postLocal('/api/music', { spec })
+      if (!res.ok) throw await responseError(res, 'ChatGPT could not complete the request.')
       const data = (await res.json()) as { composition?: Composition }
       if (!data.composition) throw new Error('No composition')
       setComp(data.composition)
@@ -294,14 +283,10 @@ export function useImageGen(initialPrompt: string) {
   const generate = useCallback(async (p: string) => {
     setStatus('loading')
     try {
-      const res = await fetch('/api/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: p }),
-      })
-      const data = (await res.json()) as { image?: string; detail?: string }
+      const res = await postLocal('/api/image', { prompt: p })
+      const data = (await res.json()) as { image?: string; detail?: string; error?: string }
       if (!res.ok || !data.image) {
-        setErrorMsg(data.detail ?? 'Image generation failed.')
+        setErrorMsg(data.detail ?? data.error ?? 'Artwork generation failed.')
         throw new Error('No image')
       }
       setImage(data.image)
