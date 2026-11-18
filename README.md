@@ -2,7 +2,7 @@
 
 LUMEN turns a plain-language prompt into an interactive workspace. Ask for a dashboard, a browser tool, a document, a conversation, vector artwork, or a short composition. The app chooses a workspace suited to the task and lets you refine its layout with a follow-up prompt.
 
-![LUMEN home screen, with the original glass scene, the prompt composer, and a workspace library](docs/screenshots/home.webp)
+![LUMEN home screen with the animated glass object, frosted prompt composer, and workspace library](docs/screenshots/frosted-workspace-home.webp)
 
 ## Run locally
 
@@ -40,15 +40,15 @@ LUMEN uses [OpenAI’s Sign in with ChatGPT flow for local apps](https://develop
 
 ### Studio launch dashboard
 
-![LUMEN dashboard showing sample launch metrics, a signups chart, and an interactive checklist](docs/screenshots/dashboard.webp)
+![Frosted LUMEN dashboard with glass shards visible behind the launch metrics, chart, and checklist](docs/screenshots/frosted-dashboard.webp)
 
 ### Focus timer
 
-![LUMEN code studio showing editable HTML alongside the running focus timer](docs/screenshots/code-studio.webp)
+![LUMEN code studio showing editable HTML alongside the running focus timer](docs/screenshots/frosted-code-studio.webp)
 
 ### Document studio on mobile
 
-![LUMEN document studio on a phone, with section navigation and an editable text area](docs/screenshots/mobile.webp)
+![LUMEN document studio on a phone, with section navigation and an editable text area](docs/screenshots/frosted-mobile-document.webp)
 
 ## How it works
 
