@@ -487,7 +487,7 @@ function SceneContents({ phase }: { phase: BlobPhase }) {
 /* Public component                                                     */
 /* ------------------------------------------------------------------ */
 
-export function GlassBlob({ phase }: { phase: BlobPhase }) {
+export function GlassBlob({ phase, onReady }: { phase: BlobPhase; onReady?: () => void }) {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
       <LuminousBackdropCSS />
@@ -504,6 +504,7 @@ export function GlassBlob({ phase }: { phase: BlobPhase }) {
           // preventDefault on loss tells the browser we want the context
           // restored; R3F resumes the frameloop automatically on restore.
           gl.domElement.addEventListener('webglcontextlost', (e) => e.preventDefault())
+          onReady?.()
         }}
         eventSource={typeof document !== 'undefined' ? document.body : undefined}
         eventPrefix="client"

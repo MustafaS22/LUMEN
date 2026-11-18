@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowDown, ArrowRight, BookOpen, Code2, ExternalLink, History, LayoutGrid, Plus, Sparkles, UserRound } from 'lucide-react'
+import { ArrowRight, ArrowUp, BookOpen, Code2, ExternalLink, History, LayoutGrid, Menu, Plus, Settings2, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { MotionConfig, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
@@ -28,11 +28,12 @@ export function LumenApp() {
   const [pending, setPending] = useState<Pending>(null)
   const [notice, setNotice] = useState('')
   const request = useRef<AbortController | null>(null)
-  const history = useRef<HTMLDialogElement>(null)
+  const navigation = useRef<HTMLDialogElement>(null)
   const promptInput = useRef<HTMLTextAreaElement>(null)
   const workspaceHeading = useRef<HTMLHeadingElement>(null)
   const reducedMotion = useReducedMotion()
   const [webgl, setWebgl] = useState(false)
+  const [glassReady, setGlassReady] = useState(false)
 
   useEffect(() => {
     try {
@@ -48,11 +49,13 @@ export function LumenApp() {
       // Storage can be disabled or contain data from an old build.
     }
     try {
-      const context = document.createElement('canvas').getContext('webgl2', { failIfMajorPerformanceCaveat: true })
-      setWebgl(Boolean(context))
-      context?.getExtension('WEBGL_lose_context')?.loseContext()
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const context = document.createElement('canvas').getContext('webgl2', { failIfMajorPerformanceCaveat: true })
+        setWebgl(Boolean(context))
+        context?.getExtension('WEBGL_lose_context')?.loseContext()
+      }
     } catch {
-      // The CSS artwork stays available without WebGL.
+      // A still of the glass scene stays available without WebGL.
     }
     return () => request.current?.abort()
   }, [])
@@ -75,7 +78,7 @@ export function LumenApp() {
     request.current?.abort()
     request.current = null
     setPending(null)
-    history.current?.close()
+    navigation.current?.close()
     setNotice('')
     setRefinement('')
     setWorkspace(item)
@@ -87,6 +90,7 @@ export function LumenApp() {
     request.current = null
     setPending(null)
     setWorkspace(null)
+    navigation.current?.close()
     setNotice('')
     setRefinement('')
     requestAnimationFrame(() => promptInput.current?.focus())
@@ -128,138 +132,160 @@ export function LumenApp() {
     }
   }
 
+  function openExample(example: (typeof examples)[number]) {
+    const id = `example-${example.id}`
+    open(recent.find((item) => item.id === id) ?? { id, example: example.id, layout: example.layout, source: 'example' })
+  }
+
+  function showAccount() {
+    navigation.current?.close()
+    accountDialog.current?.showModal()
+  }
+
+  const library = (
+    <>
+      <button type="button" className="lumen-new" onClick={reset}>
+        <Plus size={17} aria-hidden="true" /> New workspace
+      </button>
+      <nav className="lumen-library" aria-label="Workspace library">
+        <div className="lumen-library-group" role="group" aria-label="Examples">
+          <h2>Examples</h2>
+          {examples.map((example, index) => {
+            const Icon = icons[index]
+            return (
+              <button key={example.id} type="button" className="lumen-library-item" onClick={() => openExample(example)}
+                aria-current={workspace?.example === example.id ? 'page' : undefined}>
+                <Icon size={16} aria-hidden="true" /><span>{example.layout.title}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="lumen-library-group" role="group" aria-label="Recent">
+          <h2>Recent</h2>
+          {recent.length ? recent.map((item) => (
+            <button key={item.id} type="button" className="lumen-library-item" onClick={() => open(item)}
+              aria-current={workspace?.id === item.id && !workspace.example ? 'page' : undefined}>
+              <History size={15} aria-hidden="true" /><span>{item.layout.title}</span>
+            </button>
+          )) : <p>Opened workspaces appear here.</p>}
+        </div>
+      </nav>
+      <div className="lumen-rail-footer">
+        <button type="button" onClick={showAccount} className="lumen-account-button" aria-label={live ? 'ChatGPT connected' : 'Connect ChatGPT'}>
+          <span className="lumen-account-icon"><Settings2 size={16} aria-hidden="true" /></span>
+          <span><strong>ChatGPT</strong><small>{live ? 'Plan connected' : 'Connect account'}</small></span>
+        </button>
+        <a href="https://github.com/MustafaS22/LUMEN" target="_blank" rel="noreferrer" className="lumen-icon-button" aria-label="Lumen on GitHub">
+          <ExternalLink size={16} aria-hidden="true" />
+        </a>
+      </div>
+    </>
+  )
+
   return (
     <MotionConfig reducedMotion="user">
       <div className="lumen-app">
-        <header className="lumen-header">
+        <aside className="lumen-sidebar">
           <button type="button" className="lumen-wordmark" onClick={reset} aria-label="Lumen home">
-            <span className="lumen-mark" aria-hidden="true"><Sparkles size={17} /></span>
-            LUMEN
+            <img src="/icon.svg" alt="" width="28" height="28" /> Lumen
           </button>
-          <nav className="lumen-nav" aria-label="Workspace navigation">
-            <button type="button" onClick={() => accountDialog.current?.showModal()}>
-              <UserRound size={16} aria-hidden="true" /><span>{live ? 'ChatGPT connected' : 'Connect ChatGPT'}</span>
+          {library}
+        </aside>
+
+        <div className="lumen-stage">
+          <header className="lumen-header">
+            <button type="button" className="lumen-icon-button lumen-menu" onClick={() => navigation.current?.showModal()} aria-label="Open workspace library">
+              <Menu size={20} aria-hidden="true" />
             </button>
-            <button type="button" aria-label="Recent" className="lumen-nav-recent" onClick={() => history.current?.showModal()} disabled={pending === 'generate'}>
-              <History size={16} aria-hidden="true" /><span>Recent</span>
+            <div className="lumen-location">
+              <span>Workspace</span>
+              <span className="lumen-location-divider" aria-hidden="true">/</span>
+              <span className="lumen-location-current">{workspace ? workspace.layout.title : 'New'}</span>
+            </div>
+            <button type="button" className="lumen-connection" onClick={showAccount} aria-label={live ? 'Manage ChatGPT connection' : 'Connect ChatGPT from demo mode'}>
+              <i data-live={live} aria-hidden="true" /> {live ? 'ChatGPT connected' : 'Demo mode'}
             </button>
-            <a href="https://github.com/MustafaS22/LUMEN" target="_blank" rel="noreferrer" aria-label="Lumen on GitHub">
-              <ExternalLink size={17} aria-hidden="true" />
-            </a>
-          </nav>
-        </header>
+          </header>
+          <div className={`lumen-scene ${workspace ? 'is-split' : ''}`} aria-hidden="true">
+            <div className="lumen-still" data-live={glassReady && !reducedMotion} />
+            {webgl && !reducedMotion && <GlassBlob phase={workspace ? 'split' : pending ? 'thinking' : 'idle'} onReady={() => setGlassReady(true)} />}
+          </div>
 
-        <main className={workspace ? 'lumen-workspace' : 'lumen-home'}>
-          {!workspace ? (
-            <>
-              <section className="lumen-hero" aria-labelledby="lumen-title">
-                <div className="lumen-intro">
-                  <div className="lumen-mode"><i aria-hidden="true" />{live ? 'Using ChatGPT plan' : 'Demo mode'}</div>
-                  <h1 id="lumen-title">Give an idea<br />its own <em>interface.</em></h1>
-                  <p className="lumen-lede">Describe what you want to do. Lumen builds a workspace around it, from data dashboards to creative studios.</p>
-                  <form className="lumen-composer" onSubmit={(event) => submit(event, 'generate')}>
-                    <label htmlFor="lumen-prompt">What do you want to make?</label>
-                    <textarea ref={promptInput} id="lumen-prompt" value={prompt} maxLength={500} rows={2} onChange={(event) => setPrompt(event.target.value)} placeholder="A dashboard to track my studio’s launch…" disabled={pending !== null} />
-                    <div className="lumen-composer-footer">
-                      <span>{prompt.length} / 500</span>
-                      <button type="submit" className="lumen-primary" disabled={!prompt.trim() || pending !== null}>
-                        {pending ? 'Building…' : 'Build workspace'} <ArrowRight size={16} aria-hidden="true" />
-                      </button>
-                    </div>
-                  </form>
-                  <p className="lumen-note" role="status">{notice || (pending ? 'Preparing your workspace…' : live ? 'Start from a prompt or open a ready-to-use example.' : 'Try an example or connect ChatGPT to generate from a prompt.')}</p>
-                </div>
-
-                <div className="lumen-art" aria-hidden="true">
-                  <div className="lumen-orbit lumen-orbit-outer" />
-                  <div className="lumen-orbit lumen-orbit-inner" />
-                  <div className="lumen-orbit-axis" />
-                  <div className="lumen-orb" />
-                  {webgl && !reducedMotion && <GlassBlob phase={pending ? 'thinking' : 'idle'} />}
-                  <div className="lumen-art-corner top-left" />
-                  <div className="lumen-art-corner bottom-right" />
-                </div>
+          <main className={workspace ? 'lumen-workspace' : 'lumen-home'}>
+            {!workspace ? (
+              <section className="lumen-launch" aria-labelledby="lumen-title">
+                <h1 id="lumen-title">An interface that builds itself.</h1>
+                <p className="lumen-launch-description">Describe a workspace to get started.</p>
+                <form className="lumen-composer" aria-busy={pending === 'generate'} onSubmit={(event) => submit(event, 'generate')}>
+                  <label htmlFor="lumen-prompt" className="sr-only">What do you want to make?</label>
+                  <textarea ref={promptInput} id="lumen-prompt" value={prompt} maxLength={500} rows={2}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                        event.preventDefault()
+                        event.currentTarget.form?.requestSubmit()
+                      }
+                    }}
+                    placeholder="A dashboard to track my studio’s launch…" disabled={pending !== null} />
+                  <div className="lumen-composer-footer">
+                    {prompt.length >= 440 && <span aria-live="polite">{prompt.length} / 500</span>}
+                    <button type="submit" className="lumen-primary" disabled={!prompt.trim() || pending !== null}>
+                      {pending ? 'Building…' : 'Build workspace'} <ArrowUp size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                </form>
+                {notice && <p className="lumen-note" role="status">{notice}</p>}
+                {!notice && pending && <p className="lumen-note" role="status">Preparing your workspace…</p>}
+                <button type="button" className="lumen-mobile-examples" onClick={() => navigation.current?.showModal()}>Browse examples <ArrowRight size={14} aria-hidden="true" /></button>
               </section>
+            ) : (
+              <>
+                <div className="lumen-workspace-title">
+                  <div>
+                    <h1 ref={workspaceHeading} tabIndex={-1}>{workspace.layout.title}</h1>
+                    {workspace.layout.shell !== 'publisher' && <p>{workspace.layout.summary}</p>}
+                  </div>
+                  <span className="lumen-workspace-source">{workspace.source === 'example' ? 'Example' : workspace.source === 'chatgpt' ? 'ChatGPT' : 'Local starter'}</span>
+                </div>
+                <ShellRouter key={workspace.id} onLayoutChange={(layout) => {
+                  if (pending === 'refine') {
+                    request.current?.abort()
+                    request.current = null
+                    setPending(null)
+                    setNotice('Your edit was saved. Submit the refinement again to include it.')
+                  }
+                  const updated = { ...workspace, layout }
+                  setWorkspace(updated)
+                  remember(updated)
+                }} schema={workspace.layout} onReset={reset} live={live} initialCode={workspace.example === 'timer' ? focusTimerCode : undefined} />
+                <form className="lumen-refine" onSubmit={(event) => submit(event, 'refine')}>
+                  <label htmlFor="refinement" className="sr-only">Refine this workspace</label>
+                  <input id="refinement" value={refinement} onChange={(event) => setRefinement(event.target.value)} maxLength={500}
+                    placeholder={live ? 'Describe a change to this workspace…' : 'Connect ChatGPT to refine'} disabled={!live || pending !== null} />
+                  {live ? <button type="submit" className="lumen-primary" disabled={!refinement.trim() || pending !== null}>
+                    {pending === 'refine' ? 'Updating…' : 'Refine'} <ArrowUp size={16} aria-hidden="true" />
+                  </button> : <button type="button" className="lumen-secondary" onClick={showAccount}>Connect</button>}
+                </form>
+                {notice && <p className="lumen-note" role="status">{notice}</p>}
+              </>
+            )}
+          </main>
+        </div>
 
-              <section className="lumen-examples" aria-labelledby="example-heading">
-                <div className="lumen-section-heading">
-                  <h2 id="example-heading">Start with an example</h2>
-                  <ArrowDown size={16} aria-hidden="true" />
-                </div>
-                <div className="lumen-example-grid">
-                  {examples.map((example, index) => {
-                    const Icon = icons[index]
-                    return (
-                      <button type="button" key={example.id} disabled={pending !== null} className="lumen-example" onClick={() => {
-                        const id = `example-${example.id}`
-                        open(recent.find((item) => item.id === id) ?? { id, example: example.id, layout: example.layout, source: 'example' })
-                      }}>
-                        <span className="lumen-example-icon"><Icon size={18} aria-hidden="true" /></span>
-                        <span className="lumen-example-text">
-                          <small>{example.category}</small>
-                          <strong>{example.layout.title}</strong>
-                          <span>{example.description}</span>
-                        </span>
-                        <ArrowRight className="lumen-example-arrow" size={16} aria-hidden="true" />
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-            </>
-          ) : (
-            <>
-              <div className="lumen-workspace-title">
-                <div>
-                  <small>{workspace.source === 'example' ? 'Example workspace' : workspace.source === 'chatgpt' ? 'ChatGPT workspace' : 'Local starter'}</small>
-                  <h1 ref={workspaceHeading} tabIndex={-1}>{workspace.layout.title}</h1>
-                </div>
-                <button type="button" onClick={reset} className="lumen-secondary"><Plus size={16} aria-hidden="true" /> New workspace</button>
-              </div>
-              <ShellRouter key={workspace.id} onLayoutChange={(layout) => {
-                if (pending === 'refine') {
-                  request.current?.abort()
-                  request.current = null
-                  setPending(null)
-                  setNotice('Your edit was saved. Submit the refinement again to include it.')
-                }
-                const updated = { ...workspace, layout }
-                setWorkspace(updated)
-                remember(updated)
-              }} schema={workspace.layout} source={workspace.source} onReset={reset} live={live} initialCode={workspace.example === 'timer' ? focusTimerCode : undefined} />
-              <form className="lumen-refine" onSubmit={(event) => submit(event, 'refine')}>
-                <label htmlFor="refinement" className="sr-only">Refine this workspace</label>
-                <input id="refinement" value={refinement} onChange={(event) => setRefinement(event.target.value)} maxLength={500} placeholder={live ? 'Describe a change to this workspace…' : 'Connect ChatGPT to refine'} disabled={!live || pending !== null} />
-                <button type="submit" className="lumen-primary" disabled={!live || !refinement.trim() || pending !== null}>{pending === 'refine' ? 'Updating…' : 'Refine'} <ArrowRight size={16} aria-hidden="true" /></button>
-              </form>
-              {notice && <p className="lumen-note" role="status">{notice}</p>}
-            </>
-          )}
-        </main>
-
-        <dialog ref={accountDialog} className="lumen-history" aria-labelledby="account-title">
-          <div className="lumen-section-heading">
+        <dialog ref={accountDialog} className="lumen-dialog" aria-labelledby="account-title">
+          <div className="lumen-dialog-heading">
             <h2 id="account-title">ChatGPT connection</h2>
-            <button type="button" className="lumen-secondary" onClick={() => accountDialog.current?.close()}>Close</button>
+            <button type="button" className="lumen-icon-button" aria-label="Close" onClick={() => accountDialog.current?.close()}><X size={19} aria-hidden="true" /></button>
           </div>
           <ChatGPTAccount account={account} />
         </dialog>
 
-        <dialog ref={history} className="lumen-history" aria-labelledby="history-title">
-          <div className="lumen-section-heading">
-            <h2 id="history-title">Recent workspaces</h2>
-            <button type="button" className="lumen-secondary" onClick={() => history.current?.close()}>Close</button>
+        <dialog ref={navigation} className="lumen-drawer" aria-labelledby="navigation-title">
+          <div className="lumen-drawer-heading">
+            <h2 id="navigation-title" className="lumen-wordmark"><img src="/icon.svg" alt="" width="28" height="28" /> Lumen</h2>
+            <button type="button" className="lumen-icon-button" aria-label="Close workspace library" onClick={() => navigation.current?.close()}><X size={19} aria-hidden="true" /></button>
           </div>
-          <p className="lumen-note">Layouts are saved in this browser.</p>
-          {recent.length === 0 ? <p className="lumen-empty">Open an example or build your first workspace to see it here.</p> : (
-            <ul>
-              {recent.map((item) => <li key={item.id}>
-                <button type="button" onClick={() => open(item)}>
-                  {item.layout.title}<ArrowRight size={16} aria-hidden="true" />
-                </button>
-              </li>)}
-            </ul>
-          )}
+          {library}
         </dialog>
       </div>
     </MotionConfig>

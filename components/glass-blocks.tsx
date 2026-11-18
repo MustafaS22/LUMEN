@@ -46,9 +46,9 @@ import { CodeStudio, ImageStudio, MusicStudio } from '@/components/workspace-blo
 
 function StatCard({ block }: { block: StatBlock }) {
   return (
-    <div className="glass flex flex-col gap-2 rounded-3xl p-6">
+    <div className="lumen-metric glass flex flex-col gap-1.5 rounded-xl p-4">
       <span className="text-sm text-muted-foreground">{block.label}</span>
-      <span className="text-3xl font-semibold tracking-tight">{block.value}</span>
+      <span className="text-[1.65rem] font-semibold leading-tight tracking-tight tabular-nums">{block.value}</span>
       <span
         className={`flex items-center gap-1 text-sm ${
           block.positive ? 'text-glow-cyan' : 'text-glow-amber'
@@ -77,7 +77,7 @@ function ChartCard({ block }: { block: ChartBlock }) {
   const description = points.map(({ value }, index) => `${block.labels[index] || index + 1}: ${value}`).join(', ')
 
   return (
-    <div className="glass flex h-full flex-col gap-3 rounded-2xl p-5">
+    <div className="glass flex h-full flex-col gap-3 rounded-xl p-4">
       <h3 className="text-sm font-medium">{block.title}</h3>
       <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-full" role="img" aria-label={`${block.title}. ${description}`}>
         {[12, 46, 80, 114].map((row) => <line key={row} x1="15" x2={width - 15} y1={row} y2={row} stroke="currentColor" opacity=".13" />)}
@@ -99,7 +99,7 @@ function ChartCard({ block }: { block: ChartBlock }) {
 
 export function ListCard({ block, onChange }: { block: ListBlock; onChange?: (index: number, done: boolean) => void }) {
   return (
-    <div className="glass flex h-full flex-col gap-3 rounded-2xl p-5">
+    <div className="glass flex h-full flex-col gap-3 rounded-xl p-4">
       <h3 className="text-sm font-medium">{block.title}</h3>
       <ul className="flex flex-col">
         {block.items.map((item, index) => (
@@ -152,7 +152,7 @@ function GridCard({ block }: { block: GridBlock }) {
 
 function ActionCard({ block }: { block: ActionBlock }) {
   return (
-    <div className="glass rounded-2xl p-5">
+    <div className="glass rounded-xl p-4">
       <h3 className="mb-3 text-sm font-medium">Suggested next steps</h3>
       <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
         {block.actions.map((label, index) => <li key={index}>{label}</li>)}
@@ -521,19 +521,17 @@ export function blockSpan(block: Block): string {
   switch (block.type) {
     case 'chart':
     case 'text':
-    case 'table':
     case 'chat':
     case 'music':
-      return 'md:col-span-2'
-    case 'list':
-      return 'md:col-span-2 lg:col-span-2'
+      return 'lg:col-span-2'
     case 'image':
-      return 'md:col-span-1 lg:col-span-2'
+      return 'lg:col-span-2'
     case 'bracket':
     case 'action':
-      return 'md:col-span-2 lg:col-span-3'
+    case 'table':
+      return 'lg:col-span-3'
     case 'code':
-      return 'md:col-span-2 lg:col-span-3'
+      return 'lg:col-span-3'
     default:
       return ''
   }

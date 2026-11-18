@@ -11,7 +11,6 @@ import { postLocal, responseError } from '@/lib/api-client'
  */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { motion } from 'framer-motion'
 
 /* ------------------------------------------------------------------ */
 /* Shared chrome                                                        */
@@ -20,29 +19,9 @@ import { motion } from 'framer-motion'
 /** Full-height app frame every shell renders into. */
 export function ShellChrome({ children }: { children: ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.985 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.45 }}
-      className="glass flex h-full min-h-0 flex-col overflow-hidden rounded-2xl"
-    >
+    <div className="lumen-workbench flex h-full min-h-0 flex-col overflow-hidden rounded-xl">
       {children}
-    </motion.div>
-  )
-}
-
-/** Tiny badge showing whether ChatGPT or the local fallback built the app. */
-export function SourceBadge({ source }: { source: 'chatgpt' | 'fallback' | 'example' }) {
-  return (
-    <span
-      className={`rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
-        source === 'chatgpt'
-          ? 'border-glow-cyan/40 text-glow-cyan'
-          : 'border-glass-border text-muted-foreground'
-      }`}
-    >
-      {source === 'chatgpt' ? 'ChatGPT' : source === 'example' ? 'Example' : 'Local starter'}
-    </span>
+    </div>
   )
 }
 

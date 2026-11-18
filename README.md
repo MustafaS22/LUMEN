@@ -2,7 +2,7 @@
 
 LUMEN turns a plain-language prompt into an interactive workspace. Ask for a dashboard, a browser tool, a document, a conversation, vector artwork, or a short composition. The app chooses a workspace suited to the task and lets you refine its layout with a follow-up prompt.
 
-![LUMEN home screen, with a prompt composer and three example workspaces](docs/screenshots/home.webp)
+![LUMEN home screen, with the original glass scene, the prompt composer, and a workspace library](docs/screenshots/home.webp)
 
 ## Run locally
 
@@ -36,7 +36,7 @@ LUMEN uses [OpenAI’s Sign in with ChatGPT flow for local apps](https://develop
 | Vector studio | Turn a prompt into a downloadable SVG illustration, icon, or simple poster. |
 | Music studio | Compose a short multitrack piece and play it back with Web Audio. |
 
-**Try it without signing in.** Open **Studio launch dashboard**, start the **Focus timer**, or edit **A field guide to observation**. **Recent** keeps up to eight layouts in this browser, including dashboard checklist changes and document edits. Download code or artwork you want to keep. Recent layouts do not store chat transcripts or media outputs.
+**Try it without signing in.** Open **Studio launch dashboard**, start the **Focus timer**, or edit **A field guide to observation**. The library’s **Recent** section keeps up to eight layouts in this browser, including dashboard checklist changes and document edits. Download code or artwork you want to keep. Recent layouts do not store chat transcripts or media outputs.
 
 ### Studio launch dashboard
 
@@ -55,7 +55,7 @@ LUMEN uses [OpenAI’s Sign in with ChatGPT flow for local apps](https://develop
 - **Next.js App Router** serves the React workspace and the loopback-only API routes.
 - **OpenAI Responses API** uses the plan authorized by the signed-in user. The official local DevKit manages authorization, token refresh, and encrypted connection storage. Browser code receives connection status and model names.
 - **Zod** validates model-generated layouts, music notes, and vector primitives before rendering them. Code runs in an isolated iframe with restrictions on external resources. Downloaded HTML runs under the policy of whatever environment opens it, so review it before sharing or hosting it.
-- **Three.js** renders the glass object where WebGL is available. The app uses a static illustration when WebGL or motion is disabled.
+- **Three.js** renders the glass object where WebGL is available. The app shows a still of the same scene when WebGL or motion is disabled.
 
 LUMEN is designed to run on your own machine. Keep it bound to loopback and avoid exposing or forwarding its local port. Prompts and the context required to answer them go to OpenAI when you use connected features. The dashboard shows the data you supply or explicitly labeled sample data. ChatGPT plan usage currently supports the text features used here, and the vector studio builds SVGs from validated text output. See [OpenAI’s preview limitations](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations).
 
